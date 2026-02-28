@@ -1,0 +1,13 @@
+/* Example bluescreen program.
+   Reads two integers, computes their sum, and prints the result. */
+
+var a;
+var b;
+var sum;
+
+input a;
+input b;
+
+sum = a + b;
+
+output sum;
