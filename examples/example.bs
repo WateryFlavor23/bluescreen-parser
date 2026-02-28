@@ -1,4 +1,4 @@
-/* Example bluescreen program.
+/* Example bluescreen program. idk if this is right please review this 
    Reads two integers, computes their sum, and prints the result. */
 
 var a;
