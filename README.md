@@ -1,7 +1,6 @@
 # bluescreen-parser
 
-A compiler front-end for the **bluescreen** custom programming language,
-built for the course *CSTPLANGS – Translation of Programming Languages*.
+A compiler front-end by **bluescreen** custom programming language,
 
 The front-end implements three classic compiler phases:
 
@@ -48,42 +47,3 @@ underscores (`_`).  They **cannot** start with a digit.
 `var`, `input`, `output`
 
 ---
-
-## Usage
-
-```bash
-python compiler.py <source_file>
-```
-
-The compiler prints the token stream and AST on success, or a descriptive
-error message on failure.
-
-**Example** – run the bundled sample program:
-
-```bash
-python compiler.py examples/example.bs
-```
-
----
-
-## Running tests
-
-```bash
-python -m pytest tests/test_compiler.py -v
-```
-
----
-
-## Project structure
-
-```
-bluescreen-parser/
-├── compiler.py          # Entry point – ties all phases together
-├── lexer.py             # Phase 1 – Lexical analysis
-├── parser.py            # Phase 2 – Syntax analysis (recursive-descent)
-├── semantic.py          # Phase 3 – Semantic analysis (type checking)
-├── examples/
-│   └── example.bs       # Sample bluescreen source program
-└── tests/
-    └── test_compiler.py # Pytest test suite (36 tests)
-```
