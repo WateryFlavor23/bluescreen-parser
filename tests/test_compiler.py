@@ -1,9 +1,8 @@
-"""Tests for the bluescreen compiler front-end."""
+"""Tests#1 for the bluescreen compiler front-end."""
 
 import sys
 import os
 
-# Ensure the project root is on the path so we can import the modules.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
