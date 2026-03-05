@@ -28,7 +28,7 @@ class Lexer:
         self.ptr = 0
         
     def next_token(self) -> Token: 
-        while self.ptr < len(self.code) and self.code[self.ptr] == " ": # skips whitespaces
+        while self.ptr < len(self.code) and self.code[self.ptr] in (" ", "\n"): # skips whitespaces
             self.ptr += 1
             
         if self.ptr == len(self.code): # end of file
@@ -72,7 +72,16 @@ class Lexer:
         yield token
         
 if __name__ == "__main__":
-    code = "input main;"
+    code = """var a;
+    var b;
+    var sum;
+
+    input a;
+    input b;
+
+    sum = a + b;
+
+    output sum;"""
     tokenizer = Lexer(code)
     print(code)
     for tok in tokenizer:

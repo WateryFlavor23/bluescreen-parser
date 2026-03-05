@@ -100,10 +100,13 @@ class Parser:
                     left = self.parse(2)
         
                 right = self.consume(TokenType.TT_SEMI)
+
+                if self.peek() == TokenType.TT_EOF: # checks if end of file, if not: new STATEMENT
+                    self.consume(TokenType.TT_EOF)
+                else:
+                    self.parse()
         
-                self.consume(TokenType.TT_EOF)
-        
-                return Statement(left, right.value)
+                print(Statement(left, right.value))
             case 1: # parse either DECLARE, READ, or WRITE
                 left = self.consume(TokenType.TT_KEYWORD)
                 if left.value == "var":
@@ -171,8 +174,18 @@ class Parser:
                     else:
                         left = self.consume(TokenType.TT_NUMBER)
                     return Factor(left.value, None, None)
-        
+                
+    
 if __name__ == "__main__":
-    code = "name = 12 * (2 + 3 / (2 * 3));"
+    code = """var a;
+    var b;
+    var sum;
+
+    input a;
+    input b;
+
+    sum = a + b;
+
+    output sum;"""
     parser = Parser(list(Lexer(code)))
     print(parser.parse())
