@@ -38,8 +38,8 @@ class Declare(TreeNode):
     
 @dataclass
 class Assign(TreeNode):
-    left: str # Expected: '{identifier}'
     mid: str # Expected: '='
+    left: str # Expected: '{identifier}'
     right: Expression
 
 @dataclass
@@ -56,11 +56,12 @@ class Write(TreeNode):
 class Statement(TreeNode):
     left: Declare | Assign | Read | Write
     right: str # Expected: ';'
-
+    
 class Parser:
     def __init__(self, tokens: list[Token]) -> None:
         self.tokens = tokens
         self.next_token_index = 0
+        self.statements = []
         """points to the token to be consumed next"""
         
     def consume(self, expected_token_type: TokenType) -> Token:
@@ -100,13 +101,13 @@ class Parser:
                     left = self.parse(2)
         
                 right = self.consume(TokenType.TT_SEMI)
-
+                
+                self.statements.append(Statement(left, right.value))
+                
                 if self.peek() == TokenType.TT_EOF: # checks if end of file, if not: new STATEMENT
                     self.consume(TokenType.TT_EOF)
                 else:
                     self.parse()
-        
-                print(Statement(left, right.value))
             case 1: # parse either DECLARE, READ, or WRITE
                 left = self.consume(TokenType.TT_KEYWORD)
                 if left.value == "var":
@@ -114,9 +115,9 @@ class Parser:
                     
                     return Declare(left.value, right.value)
                 elif left.value == "input":
-                    right = self.parse(3)
+                    right = self.consume(TokenType.TT_IDENT)
                     
-                    return Read(left.value, right)
+                    return Read(left.value, right.value)
                 elif left.value == "output":
                     right = self.parse(3)
                     
@@ -126,13 +127,13 @@ class Parser:
                 mid = self.consume(TokenType.TT_ASSIGN)
                 right = self.parse(3)
                 
-                return Assign(left.value, mid.value, right)
+                return Assign(mid.value, left.value, right)
             case 3: # parse EXPRESSION
                 left = self.parse(4)
                 
                 if self.peek() in (TokenType.TT_SEMI, TokenType.TT_RPAREN):
                     # return if expression is just ONE statement or number
-                    return Expression(left, None, None)
+                    return Expression(None, left, None)
                 
                 if self.peek() == TokenType.TT_PLUS:
                     op = "+"
@@ -149,7 +150,7 @@ class Parser:
                 
                 if self.peek() in (TokenType.TT_SEMI, TokenType.TT_PLUS, TokenType.TT_MINUS, TokenType.TT_RPAREN):
                     # return if expression is just ONE statement or number
-                    return Term(left, None, None)
+                    return Term(None, left, None)
                 
                 if self.peek() == TokenType.TT_STAR:
                     op = "*"
@@ -167,15 +168,15 @@ class Parser:
                     mid = self.parse(3)
                     right = self.consume(TokenType.TT_RPAREN)
                     
-                    return Factor(left.value, mid, left.value)
+                    return Factor(left.value, mid, right.value)
                 else:
                     if self.peek() == TokenType.TT_IDENT:
-                        left = self.consume(TokenType.TT_IDENT)
+                        mid = self.consume(TokenType.TT_IDENT)
+                        return Factor(None, mid.value, None)
                     else:
-                        left = self.consume(TokenType.TT_NUMBER)
-                    return Factor(left.value, None, None)
+                        mid = self.consume(TokenType.TT_NUMBER)
+                        return Factor(None, Int(mid.value), None)
                 
-    
 if __name__ == "__main__":
     code = """var a;
     var b;
@@ -184,8 +185,9 @@ if __name__ == "__main__":
     input a;
     input b;
 
-    sum = a + b;
+    sum = (a + b) + 2;
 
     output sum;"""
     parser = Parser(list(Lexer(code)))
-    print(parser.parse())
+    parser.parse()
+    print(parser.statements)
