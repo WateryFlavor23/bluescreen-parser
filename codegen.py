@@ -47,10 +47,10 @@ class Instruction:
     arg2: Any = None
 
     def __str__(self) -> str:
-        if self.op == "read":
-            return f"read {self.result}"
-        if self.op == "print":
-            return f"print {self.arg1}"
+        if self.op == "input":
+            return f"input {self.result}"
+        if self.op == "output":
+            return f"output {self.arg1}"
         if self.op == "=":
             return f"{self.result} = {self.arg1}"
         return f"{self.result} = {self.arg1} {self.op} {self.arg2}"
@@ -123,11 +123,11 @@ class CodeGenerator:
             self._emit(Instruction(op="=", result=node.name, arg1=result))
 
         elif node.type == "Input":
-            self._emit(Instruction(op="read", result=node.name))
+            self._emit(Instruction(op="input", result=node.name))
 
         elif node.type == "Output":
             result = self._visit_expr(node.expr)
-            self._emit(Instruction(op="print", arg1=result))
+            self._emit(Instruction(op="output", arg1=result))
 
     # ── expression visitors (post-order) ──────────────────────────────
 
