@@ -6,17 +6,13 @@ class TreeNode:
     pass
 
 @dataclass
-class Int(TreeNode):
-    value: int # Expected: {0-9}
-    
-@dataclass
 class Expression:
     pass
 
 @dataclass
 class Factor(TreeNode):
     left: str | None # Expected: '('
-    mid: str | Int | Expression # Expected: {identifier} or {0-9} or another EXPRESSION
+    mid: str | int | Expression # Expected: {identifier} or {0-9} or another EXPRESSION
     right: str | None # Expected: ')'
 
 @dataclass
@@ -82,7 +78,7 @@ class Parser:
         peek_at = self.next_token_index + skip
         return self.tokens[peek_at].type if peek_at < len(self.tokens) else None
         
-    def parse(self, parse_flag = 0):
+    def parse(self, parse_flag = 0) -> None:
         """Parses the program into the defined AST
         
         Parse Flag Rules:
@@ -175,7 +171,7 @@ class Parser:
                         return Factor(None, mid.value, None)
                     else:
                         mid = self.consume(TokenType.TT_NUMBER)
-                        return Factor(None, Int(mid.value), None)
+                        return Factor(None, mid.value, None)
                 
 if __name__ == "__main__":
     code = """var a;
@@ -185,9 +181,10 @@ if __name__ == "__main__":
     input a;
     input b;
 
-    sum = (a + b) + 2;
+    sum = a * b;
 
     output sum;"""
     parser = Parser(list(Lexer(code)))
     parser.parse()
-    print(parser.statements)
+    for i in range(len(parser.statements)):
+        print(parser.statements[i])
