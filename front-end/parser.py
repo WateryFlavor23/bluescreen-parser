@@ -173,8 +173,12 @@ class Parser:
                         mid = self.consume(TokenType.TT_NUMBER)
                         return Factor(None, mid.value, None)
                 
-if __name__ == "__main__":
-    code = """var a;
+
+"""
+Example Code Run:
+
+    
+    code = "var a;
     var b;
     var sum;
 
@@ -183,8 +187,10 @@ if __name__ == "__main__":
 
     sum = a * b;
 
-    output sum;"""
+    output sum;""
     parser = Parser(list(Lexer(code)))
     parser.parse()
     for i in range(len(parser.statements)):
         print(parser.statements[i])
+        
+"""

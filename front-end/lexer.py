@@ -71,8 +71,10 @@ class Lexer:
             yield token
         yield token
         
-if __name__ == "__main__":
-    code = """var a;
+"""
+Example Code Run:
+
+    code = "var a;
     var b;
     var sum;
 
@@ -81,8 +83,10 @@ if __name__ == "__main__":
 
     sum = a + b;
 
-    output sum;"""
+    output sum;"
+    
     tokenizer = Lexer(code)
     print(code)
     for tok in tokenizer:
         print(f"\t{tok.type}, {tok.value}")
+"""
