@@ -6,7 +6,8 @@ class Analyzer:
         self.statements = statements
         self.idx = 0
         self.symbols = {} # symbol table
-        self.errors = []
+        self.comp_errors = []
+        self.run_errors = []
         
     def traverse(self, node) -> int | None:
         """
@@ -21,11 +22,11 @@ class Analyzer:
         if type(node) == Factor:
             if type(node.mid) == str:
                 if node.mid not in self.symbols:
-                    self.errors.append(RuntimeError(f"Undefined var: {node.mid}"))
+                    self.comp_errors.append(RuntimeError(f"Undefined var: {node.mid}"))
                     return None
                 else:
                     if self.symbols[node.mid] == None:
-                        self.errors.append(RuntimeError(f"Var with no value: {node.mid}"))
+                        self.comp_errors.append(RuntimeError(f"Var with no value: {node.mid}"))
                         return None
                     else: return self.symbols[node.mid] 
                 
@@ -47,7 +48,7 @@ class Analyzer:
             return left * right
         elif node.op == "/":
             if right == 0:
-                self.errors.append("Attempted zero division")
+                self.run_errors.append("Attempted zero division")
             else: return left / right
         
         return left + right if node.op == "+" else left - right
@@ -59,22 +60,22 @@ class Analyzer:
             
             if type(curr_statement) == Declare:
                 if curr_statement.right in self.symbols:
-                    self.errors.append(RuntimeError(f"Redeclaration of var: {curr_statement.right}"))
+                    self.comp_errors.append(RuntimeError(f"Redeclaration of var: {curr_statement.right}"))
                 else:
                     self.symbols[curr_statement.right] = None
                     
             elif type(curr_statement) == Assign:
                 val = self.traverse(curr_statement.right)
                 if curr_statement.left not in self.symbols:
-                    self.errors.append(RuntimeError(f"Undefined var: {curr_statement.left}"))
+                    self.comp_errors.append(RuntimeError(f"Undefined var: {curr_statement.left}"))
                 else:
                     self.symbols[curr_statement.left] = val
                 
             elif type(curr_statement) == Read:
                 if curr_statement.right not in self.symbols:
-                    self.errors.append(RuntimeError(f"Undefined var: {curr_statement.right}"))
+                    self.comp_errors.append(RuntimeError(f"Undefined var: {curr_statement.right}"))
                 else:
-                    self.symbols[curr_statement.right] = 0
+                    self.symbols[curr_statement.right] = int(input(f"{curr_statement.right} = "))
                     
             elif type(curr_statement) == Write:
                 self.traverse(curr_statement.right)
@@ -82,18 +83,28 @@ class Analyzer:
             self.idx += 1
         
         # Post Compilation Checking
-        if not self.errors:
+        if not [self.comp_errors, self.run_errors]:
+            print("===============================================")
             print("Successful Compilation.")
         else:
-            print("Compilation Errors:")
+            if self.comp_errors:
+                print("===============================================")
+                print("Compilation Errors:")
             
-            for i in range(len(self.errors)):
-                print(self.errors[i])
-
-        print("Symbol Table: ", self.symbols)
+                for i in range(len(self.comp_errors)):
+                    print(self.comp_errors[i])
+            
+            if self.run_errors:
+                print("===============================================")
+                print("Run-Time Errors:")
+            
+                for i in range(len(self.run_errors)):
+                    print(self.run_errors[i])
     
-if __name__ == "__main__":
-    code = """var a;
+"""
+Example Code Run:
+
+    code = "var a;
     var b;
     var sum;
     
@@ -102,7 +113,7 @@ if __name__ == "__main__":
 
     sum = a * b;
 
-    output sum;"""
+    output sum;"
     
     parser = Parser(list(Lexer(code)))
     parser.parse()
@@ -111,4 +122,4 @@ if __name__ == "__main__":
 
     analyzer.analyze()
     
-    
+"""
