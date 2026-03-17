@@ -54,16 +54,40 @@ class Statement(TreeNode):
     right: str # Expected: ';'
     
 class Parser:
+    """ Class for validating syntax rules and generating 
+        Abstract Syntax Tree (AST)
+    """
     def __init__(self, tokens: list[Token]) -> None:
+        """ Initialization of the Parser class
+        
+        Args:
+            tokens::list[Token]
+                Output token stream taken from the Lexer class
+        
+        Returns:
+            None
+        """
+        
         self.tokens = tokens
         self.next_token_index = 0
         self.statements = []
-        """points to the token to be consumed next"""
+        """ points to the token to be consumed next """
         
     def consume(self, expected_token_type: TokenType) -> Token:
-        """Returns the next token if it is the expected type
-        else, raises an error
-        Main function for checking if code makes sense
+        """ Returns the next token if it is the expected type
+            else, raises an error
+            Main function for checking if code makes sense
+            
+        Args:
+            expected_token_type::TokenType
+                Used for comparing if the next token in the
+                stream is valid within the syntax rules as
+                defined by the language
+                
+        Returns:
+            Token::TokenType
+                Returns the validated token to be stored in
+                the generated AST
         """
         
         next_token = self.tokens[self.next_token_index]
@@ -74,12 +98,25 @@ class Parser:
         return next_token
     
     def peek(self, skip: int = 0) -> TokenType | None:
-        """Checks upcoming token without consuming it"""
+        """Checks upcoming token without consuming it
+        
+        Args:
+            skip::int = 0
+                Used for checking either the current token
+                in the stream or the following tokens
+                
+        Returns:
+            TokenType|None:
+                Returns the token type of the examined token
+                in token stream; used for decision gates
+        """
         peek_at = self.next_token_index + skip
         return self.tokens[peek_at].type if peek_at < len(self.tokens) else None
         
     def parse(self, parse_flag = 0) -> None:
-        """Parses the program into the defined AST
+        """ Parses the program into the defined AST
+            Makes use of Recursive Descent Parsing
+            to generate the AST
         
         Parse Flag Rules:
         1 = Parse DECLARE, READ, WRITE statements
@@ -88,6 +125,13 @@ class Parser:
         4 = Parse TERM statements
         5 = Parse Factor
         
+        Args:
+            parse_flag::int = 0
+                Used for match-case control flow to indicate
+                what type of statement is being parsed
+                
+        Returns:
+            None
         """
         match parse_flag:
             case 0: # initial process: parse STATEMENT
@@ -172,25 +216,3 @@ class Parser:
                     else:
                         mid = self.consume(TokenType.TT_NUMBER)
                         return Factor(None, mid.value, None)
-                
-
-"""
-Example Code Run:
-
-    
-    code = "var a;
-    var b;
-    var sum;
-
-    input a;
-    input b;
-
-    sum = a * b;
-
-    output sum;""
-    parser = Parser(list(Lexer(code)))
-    parser.parse()
-    for i in range(len(parser.statements)):
-        print(parser.statements[i])
-        
-"""

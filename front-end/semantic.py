@@ -6,16 +6,26 @@ class Analyzer:
         self.statements = statements
         self.idx = 0
         self.symbols = {} # symbol table
-        self.comp_errors = []
-        self.run_errors = []
+        self.comp_errors = [] # for listing errors during compile time
+        self.run_errors = [] # errors for division by zero
         
     def traverse(self, node) -> int | None:
-        """
+        """ Function for traversing through an expression subtree
+            if node != Factor or None, immediately traverse left and right branches
+            final return == None if errors occured such as undefined var or var with no value
+            
+            Makes use of Post-Order Traversal to read the valules in an expression subtree
+            
+        Args:
+            node::Expression|Term|Factor
+                Takes the AST node as input and recursively reads
+                its subsequent nodes.
         
-        function for traversing through an expression subtree
-        if node != Factor or None, immediately traverse left and right branches
-        final return == None if errors occured such as undefined var or var with no value
-        
+        Returns:
+            int|None
+                The aim of the function is to return the value
+                of each factor, term, and ultimately: the 
+                expression
         """
         if node == None: return None # Handling for assign sole identifier to identifier
         
@@ -55,6 +65,28 @@ class Analyzer:
             
     
     def analyze(self) -> None:
+        """ Function for building the final symbol table and its values
+        
+        Args:
+            self.statements::list[Statement]
+                List of every line of the code file
+            self.idx::int
+                ID for accessing each statement in the list
+            self.symbols::dict{}
+                Symbol table to be filled with variable names and their
+                values
+            self.comp_errors::list[]
+                Stores any detected errors at compilation-time;
+                to be displayed after compilation
+            self.run_errors::list[]
+                Stores any detected errors at run-time; to be 
+                displayed after incorrect operation values.
+                i.e: zero division
+        
+        Returns:
+            None
+        """
+        
         while self.idx < len(self.statements):
             curr_statement = self.statements[self.idx].left
             
@@ -100,26 +132,3 @@ class Analyzer:
             
                 for i in range(len(self.run_errors)):
                     print(self.run_errors[i])
-    
-"""
-Example Code Run:
-
-    code = "var a;
-    var b;
-    var sum;
-    
-    a = 12;
-    b = a * (3 + 12);
-
-    sum = a * b;
-
-    output sum;"
-    
-    parser = Parser(list(Lexer(code)))
-    parser.parse()
-    
-    analyzer = Analyzer(parser.statements)
-
-    analyzer.analyze()
-    
-"""
