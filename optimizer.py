@@ -120,7 +120,7 @@ class Optimizer:
                 continue
 
             # --- read invalidates constant knowledge ---------------
-            if op == "input" and instr.result is not None:
+            if op == "read" and instr.result is not None:
                 constants.pop(instr.result, None)
                 result.append(instr)
                 if instr.result:
