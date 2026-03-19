@@ -17,8 +17,8 @@ import pytest
 
 from lexer import Lexer
 from parser import Parser
-from codegen import CodeGenerator, Instruction
-from optimizer import Optimizer
+from backend.codegen import CodeGenerator, Instruction
+from backend.optimizer import Optimizer
 
 
 # ── helpers ───────────────────────────────────────────────────────────

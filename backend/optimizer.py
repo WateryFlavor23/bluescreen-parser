@@ -23,7 +23,7 @@ from __future__ import annotations
 import operator
 from collections import Counter
 
-from codegen import Instruction
+from .codegen import Instruction
 
 
 # Map operator strings to Python callables.
