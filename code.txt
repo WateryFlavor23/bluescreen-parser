@@ -1,0 +1,5 @@
+read a
+read b
+t1 = a + b
+sum = t1
+print sum
