@@ -11,6 +11,15 @@ Each TAC instruction is one of:
     read result              (read integer from stdin)
     print arg1               (write value to stdout)
 
+.. note::
+
+   The TAC opcodes ``read`` and ``print`` correspond to the
+   source-level keywords ``input`` and ``output`` respectively.
+   The bluescreen language itself only has three keywords:
+   ``var``, ``input``, and ``output``.  Adding new keywords or
+   statement types is straightforward — add lexer/parser rules,
+   a semantic check, and a corresponding TAC emission here.
+
 Time complexity : O(n) where n = number of AST nodes.
 Space complexity: O(n) for the instruction list.
 """
