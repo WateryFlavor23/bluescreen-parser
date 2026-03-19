@@ -6,17 +6,13 @@ class TreeNode:
     pass
 
 @dataclass
-class Int(TreeNode):
-    value: int # Expected: {0-9}
-    
-@dataclass
 class Expression:
     pass
 
 @dataclass
 class Factor(TreeNode):
     left: str | None # Expected: '('
-    mid: str | Int | Expression # Expected: {identifier} or {0-9} or another EXPRESSION
+    mid: str | int | Expression # Expected: {identifier} or {0-9} or another EXPRESSION
     right: str | None # Expected: ')'
 
 @dataclass
@@ -38,8 +34,8 @@ class Declare(TreeNode):
     
 @dataclass
 class Assign(TreeNode):
-    left: str # Expected: '{identifier}'
     mid: str # Expected: '='
+    left: str # Expected: '{identifier}'
     right: Expression
 
 @dataclass
@@ -56,17 +52,42 @@ class Write(TreeNode):
 class Statement(TreeNode):
     left: Declare | Assign | Read | Write
     right: str # Expected: ';'
-
+    
 class Parser:
+    """ Class for validating syntax rules and generating 
+        Abstract Syntax Tree (AST)
+    """
     def __init__(self, tokens: list[Token]) -> None:
+        """ Initialization of the Parser class
+        
+        Args:
+            tokens::list[Token]
+                Output token stream taken from the Lexer class
+        
+        Returns:
+            None
+        """
+        
         self.tokens = tokens
         self.next_token_index = 0
-        """points to the token to be consumed next"""
+        self.statements = []
+        """ points to the token to be consumed next """
         
     def consume(self, expected_token_type: TokenType) -> Token:
-        """Returns the next token if it is the expected type
-        else, raises an error
-        Main function for checking if code makes sense
+        """ Returns the next token if it is the expected type
+            else, raises an error
+            Main function for checking if code makes sense
+            
+        Args:
+            expected_token_type::TokenType
+                Used for comparing if the next token in the
+                stream is valid within the syntax rules as
+                defined by the language
+                
+        Returns:
+            Token::TokenType
+                Returns the validated token to be stored in
+                the generated AST
         """
         
         next_token = self.tokens[self.next_token_index]
@@ -77,12 +98,25 @@ class Parser:
         return next_token
     
     def peek(self, skip: int = 0) -> TokenType | None:
-        """Checks upcoming token without consuming it"""
+        """Checks upcoming token without consuming it
+        
+        Args:
+            skip::int = 0
+                Used for checking either the current token
+                in the stream or the following tokens
+                
+        Returns:
+            TokenType|None:
+                Returns the token type of the examined token
+                in token stream; used for decision gates
+        """
         peek_at = self.next_token_index + skip
         return self.tokens[peek_at].type if peek_at < len(self.tokens) else None
         
-    def parse(self, parse_flag = 0):
-        """Parses the program into the defined AST
+    def parse(self, parse_flag = 0) -> None:
+        """ Parses the program into the defined AST
+            Makes use of Recursive Descent Parsing
+            to generate the AST
         
         Parse Flag Rules:
         1 = Parse DECLARE, READ, WRITE statements
@@ -91,6 +125,13 @@ class Parser:
         4 = Parse TERM statements
         5 = Parse Factor
         
+        Args:
+            parse_flag::int = 0
+                Used for match-case control flow to indicate
+                what type of statement is being parsed
+                
+        Returns:
+            None
         """
         match parse_flag:
             case 0: # initial process: parse STATEMENT
@@ -100,10 +141,13 @@ class Parser:
                     left = self.parse(2)
         
                 right = self.consume(TokenType.TT_SEMI)
-        
-                self.consume(TokenType.TT_EOF)
-        
-                return Statement(left, right.value)
+                
+                self.statements.append(Statement(left, right.value))
+                
+                if self.peek() == TokenType.TT_EOF: # checks if end of file, if not: new STATEMENT
+                    self.consume(TokenType.TT_EOF)
+                else:
+                    self.parse()
             case 1: # parse either DECLARE, READ, or WRITE
                 left = self.consume(TokenType.TT_KEYWORD)
                 if left.value == "var":
@@ -111,9 +155,9 @@ class Parser:
                     
                     return Declare(left.value, right.value)
                 elif left.value == "input":
-                    right = self.parse(3)
+                    right = self.consume(TokenType.TT_IDENT)
                     
-                    return Read(left.value, right)
+                    return Read(left.value, right.value)
                 elif left.value == "output":
                     right = self.parse(3)
                     
@@ -123,13 +167,13 @@ class Parser:
                 mid = self.consume(TokenType.TT_ASSIGN)
                 right = self.parse(3)
                 
-                return Assign(left.value, mid.value, right)
+                return Assign(mid.value, left.value, right)
             case 3: # parse EXPRESSION
                 left = self.parse(4)
                 
                 if self.peek() in (TokenType.TT_SEMI, TokenType.TT_RPAREN):
                     # return if expression is just ONE statement or number
-                    return Expression(left, None, None)
+                    return Expression(None, left, None)
                 
                 if self.peek() == TokenType.TT_PLUS:
                     op = "+"
@@ -146,7 +190,7 @@ class Parser:
                 
                 if self.peek() in (TokenType.TT_SEMI, TokenType.TT_PLUS, TokenType.TT_MINUS, TokenType.TT_RPAREN):
                     # return if expression is just ONE statement or number
-                    return Term(left, None, None)
+                    return Term(None, left, None)
                 
                 if self.peek() == TokenType.TT_STAR:
                     op = "*"
@@ -164,15 +208,11 @@ class Parser:
                     mid = self.parse(3)
                     right = self.consume(TokenType.TT_RPAREN)
                     
-                    return Factor(left.value, mid, left.value)
+                    return Factor(left.value, mid, right.value)
                 else:
                     if self.peek() == TokenType.TT_IDENT:
-                        left = self.consume(TokenType.TT_IDENT)
+                        mid = self.consume(TokenType.TT_IDENT)
+                        return Factor(None, mid.value, None)
                     else:
-                        left = self.consume(TokenType.TT_NUMBER)
-                    return Factor(left.value, None, None)
-        
-if __name__ == "__main__":
-    code = "name = 12 * (2 + 3 / (2 * 3));"
-    parser = Parser(list(Lexer(code)))
-    print(parser.parse())
+                        mid = self.consume(TokenType.TT_NUMBER)
+                        return Factor(None, mid.value, None)
