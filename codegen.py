@@ -1,8 +1,9 @@
 """
 Code generator for the bluescreen language.
 
-Traverses a valid AST using **post-order traversal** and emits
-Three-Address Code (TAC) as an intermediate representation.
+Traverses a valid AST (produced by the front-end parser) using
+**post-order traversal** and emits Three-Address Code (TAC) as an
+intermediate representation.
 
 Each TAC instruction is one of:
 
@@ -11,14 +12,8 @@ Each TAC instruction is one of:
     read result              (read integer from stdin)
     print arg1               (write value to stdout)
 
-.. note::
-
-   The TAC opcodes ``read`` and ``print`` correspond to the
-   source-level keywords ``input`` and ``output`` respectively.
-   The bluescreen language itself only has three keywords:
-   ``var``, ``input``, and ``output``.  Adding new keywords or
-   statement types is straightforward — add lexer/parser rules,
-   a semantic check, and a corresponding TAC emission here.
+Compatible with the front-end parser's AST node classes:
+    Statement, Declare, Assign, Read, Write, Expression, Term, Factor
 
 Time complexity : O(n) where n = number of AST nodes.
 Space complexity: O(n) for the instruction list.
@@ -28,8 +23,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
-
-from parser import Program, ASTNode
 
 
 # ── TAC instruction ──────────────────────────────────────────────────
@@ -70,10 +63,14 @@ class Instruction:
 class CodeGenerator:
     """Generates three-address code from a bluescreen AST.
 
+    Works with the front-end parser's AST node classes (Statement,
+    Declare, Assign, Read, Write, Expression, Term, Factor).
+    Uses duck typing — no parser imports required.
+
     Usage::
 
         gen = CodeGenerator()
-        instructions = gen.generate(ast)
+        instructions = gen.generate(parser.statements)
         print(gen.format_tac(instructions))
 
     Design
@@ -102,8 +99,15 @@ class CodeGenerator:
 
     # ── public API ────────────────────────────────────────────────────
 
-    def generate(self, ast: Program) -> list[Instruction]:
-        """Walk the AST and return a list of TAC instructions.
+    def generate(self, statements: list) -> list[Instruction]:
+        """Walk the AST statements and return a list of TAC instructions.
+
+        Parameters
+        ----------
+        statements : list[Statement]
+            The ``parser.statements`` list from the front-end parser.
+            Each Statement has ``.left`` (the actual node) and
+            ``.right`` (the semicolon).
 
         Time complexity: O(n).
         """
@@ -111,8 +115,9 @@ class CodeGenerator:
         self._instructions = []
         self._symbols = set()
 
-        for stmt in ast.statements:
-            self._visit_statement(stmt)
+        for stmt in statements:
+            # Statement wraps the actual node in .left
+            self._visit_statement(stmt.left)
 
         return list(self._instructions)
 
@@ -123,41 +128,70 @@ class CodeGenerator:
 
     # ── statement visitors ────────────────────────────────────────────
 
-    def _visit_statement(self, node: ASTNode) -> None:
-        if node.type == "VarDecl":
-            self._symbols.add(node.name)
+    def _visit_statement(self, node) -> None:
+        """Visit a statement node (Declare, Assign, Read, or Write)."""
+        node_type = type(node).__name__
 
-        elif node.type == "Assign":
-            result = self._visit_expr(node.expr)
-            self._emit(Instruction(op="=", result=node.name, arg1=result))
+        if node_type == "Declare":
+            # Declare: .left = "var", .right = variable name
+            self._symbols.add(node.right)
 
-        elif node.type == "Input":
-            self._emit(Instruction(op="read", result=node.name))
+        elif node_type == "Assign":
+            # Assign: .left = variable name, .mid = "=", .right = Expression
+            result = self._visit_expr(node.right)
+            self._emit(Instruction(op="=", result=node.left, arg1=result))
 
-        elif node.type == "Output":
-            result = self._visit_expr(node.expr)
+        elif node_type == "Read":
+            # Read: .left = "input", .right = variable name
+            self._emit(Instruction(op="read", result=node.right))
+
+        elif node_type == "Write":
+            # Write: .left = "output", .right = Expression
+            result = self._visit_expr(node.right)
             self._emit(Instruction(op="print", arg1=result))
+
+        else:
+            raise RuntimeError(f"Unknown statement node type: {node_type}")
 
     # ── expression visitors (post-order) ──────────────────────────────
 
-    def _visit_expr(self, node: ASTNode) -> str | int:
+    def _visit_expr(self, node) -> str | int:
         """Return the name/value that holds this expression's result.
 
-        For a literal ``Number``, the integer value is returned directly.
-        For an ``Ident``, the variable name is returned.
-        For a ``BinOp``, a new temporary is created and its name returned.
+        Handles Expression, Term, and Factor nodes from the front-end
+        parser using post-order traversal.
         """
-        if node.type == "Number":
-            return node.value
+        node_type = type(node).__name__
 
-        if node.type == "Ident":
-            return node.name
-
-        if node.type == "BinOp":
+        if node_type == "Expression":
+            # Expression: .op (+/-/None), .left = Term, .right = Term|None
             left = self._visit_expr(node.left)
+            if node.op is None:
+                # Single-term expression, no operation
+                return left
             right = self._visit_expr(node.right)
             temp = self._new_temp()
             self._emit(Instruction(op=node.op, result=temp, arg1=left, arg2=right))
             return temp
 
-        raise RuntimeError(f"Unknown AST node type: {node.type}")  # pragma: no cover
+        if node_type == "Term":
+            # Term: .op (*/÷/None), .left = Factor, .right = Factor|None
+            left = self._visit_expr(node.left)
+            if node.op is None:
+                # Single-factor term, no operation
+                return left
+            right = self._visit_expr(node.right)
+            temp = self._new_temp()
+            self._emit(Instruction(op=node.op, result=temp, arg1=left, arg2=right))
+            return temp
+
+        if node_type == "Factor":
+            # Factor: .left = "(" or None, .mid = int|str|Expression, .right = ")" or None
+            if isinstance(node.mid, int):
+                return node.mid
+            if isinstance(node.mid, str):
+                return node.mid
+            # node.mid is an Expression (parenthesized)
+            return self._visit_expr(node.mid)
+
+        raise RuntimeError(f"Unknown expression node type: {node_type}")
