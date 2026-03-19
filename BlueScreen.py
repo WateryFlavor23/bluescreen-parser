@@ -11,7 +11,7 @@ if __name__ == "__main__":
     print("=======================================================")
 
     while True:
-        choice = (input("WRITE Code or READ From 'code.txt'? [W/R]: ")).lower()
+        choice = (input("WRITE Code or READ From 'bs_code.txt'? [W/R]: ")).lower()
         
         if choice == 'w':
             program = []
