@@ -15,10 +15,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "front-end"))
 
 import pytest
 
-from lexer import Lexer
-from parser import Parser
-from backend.codegen import CodeGenerator, Instruction
-from backend.optimizer import Optimizer
+from front_end.lexer import Lexer
+from front_end.parser import Parser
+from back_end.codegen import CodeGenerator, Instruction
+from back_end.optimizer import Optimizer
 
 
 # ── helpers ───────────────────────────────────────────────────────────
